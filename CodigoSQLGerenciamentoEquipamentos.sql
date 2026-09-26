@@ -1,4 +1,9 @@
 USE gerenciamento_equipamento;
+select * from categoria_equipamento;
+select * from equipamento;
+select * from Usuarios;
+select * from solicitacao_emprestimo;
+drop trigger verificar_status_equipamento;
 
 DELIMITER //
 CREATE EVENT verificar_atrasos
@@ -52,6 +57,7 @@ END//
 DELIMITER ;
 
 DELIMITER //
+
 CREATE TRIGGER verificar_status_equipamento
 BEFORE INSERT ON solicitacao_emprestimo
 FOR EACH ROW
@@ -65,43 +71,28 @@ BEGIN
     WHERE equipamento_id = NEW.equipamento_id;
 
     IF status_equipamento_atual <> 'Disponivel' THEN
-
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Empréstimo não permitido: equipamento não está disponível.';
-
     END IF;
-    
+
     SELECT status_usuario
     INTO status_usuario_atual
     FROM usuarios
     WHERE id_usuario = NEW.usuario_id;
-    IF status_usuario <> 'Ativo' THEN
-		SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Usuário não está ativo para fazer emprestimo';
-	END IF;
+
+    IF status_usuario_atual <> 'Ativo' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Usuário não está ativo para fazer empréstimo.';
+    END IF;
 
 END//
+
 DELIMITER ;
 
 create table categoria_equipamento(
 	categoria_id int auto_increment primary key,
     categoria_name varchar(100) not null unique
 );
-
-select * from categoria_equipamento;
-select * from equipamento;
-select * from Usuarios;
-select * from solicitacao_emprestimo;
-delete from Categoria_equipamento where categoria_id >= 2;
-drop table Usuarios;
-
-ALTER TABLE Usuarios
-MODIFY COLUMN senha VARCHAR(255) NOT NULL;
-
-ALTER TABLE solicitacao_emprestimo
-MODIFY COLUMN data_solicitacao datetime default current_timestamp not null;
-
-drop table solicitacao_emprestimo;
 
 create table usuarios(
 	id_usuario int auto_increment primary key,
@@ -141,3 +132,6 @@ CREATE TABLE solicitacao_emprestimo (
     FOREIGN KEY (equipamento_id) REFERENCES equipamento(equipamento_id),
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id_usuario)
 );
+
+
+SHOW TRIGGERS LIKE 'solicitacao_emprestimo';
